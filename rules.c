@@ -3,6 +3,16 @@
  */
 #include "make.h"
 
+#ifdef DEBUG
+# define DP(fmt, ...) printf("  > " fmt, __VA_ARGS__)
+#else
+# define DP(fmt, ...)
+# ifndef NDEBUG
+#  define NDEBUG
+# endif
+#endif
+#include <assert.h> // Must come after setting NDEBUG
+
 /*
  * Return a pointer to the suffix of a name (which may be the
  * terminating NUL if there's no suffix).
@@ -15,19 +25,29 @@ suffix(const char *name)
 }
 
 /*
+ * Find a name structure whose name is formed by concatenating three
+ * strings.  If 'create' is TRUE the name is created if necessary.
+ */
+static struct name *
+namecat3(const char *s, const char *t, const char *u, int create)
+{
+	char *p;
+	struct name *np;
+
+	p = xconcat3(s, t, u);
+	np = create ? newname(p) : findname(p);
+	free(p);
+	return np;
+}
+
+/*
  * Find a name structure whose name is formed by concatenating two
  * strings.  If 'create' is TRUE the name is created if necessary.
  */
 static struct name *
 namecat(const char *s, const char *t, int create)
 {
-	char *p;
-	struct name *np;
-
-	p = xconcat3(s, t, "");
-	np = create ? newname(p) : findname(p);
-	free(p);
-	return np;
+	return namecat3(s, t, "", create);
 }
 
 /*
@@ -66,8 +86,29 @@ dyndep(struct name *np, struct rule *imprule)
 			newsuff = dp->d_name->n_name;
 			sp = namecat(newsuff, suff, FALSE);
 			if (sp && sp->n_rule) {
+				struct name *ip = NULL;
 				// Generate a name for an implicit prerequisite
-				struct name *ip = namecat(base, newsuff, TRUE);
+				// - apply a path if the suffix is combined with one!
+				if (!strchr(newsuff, '%')) {
+					ip = namecat(base, newsuff, TRUE);
+				} else {
+DP("%s is a pattern rule!\n", newsuff);
+					char* pattern = xstrdup(newsuff);
+					char* placeholder = strchr(pattern, '%');
+					assert(placeholder);
+					*placeholder = '\0';
+					const char* path = pattern;
+					const char* realsuff = placeholder + 1; // May just be '\0'
+					ip = namecat3(path, base, realsuff, TRUE);
+DP("  [path: %s] [real_suffix: %s] [base: %s] -> %s\n", path, realsuff, base, ip->n_name);
+					free(pattern);
+				}
+
+/* DP("[imprule? %c] [chain? %c] [name=%s] [dp:%s] [suff=%s], [newsuff=%s] [imp.prereq:%s%s] inf. rule to try: %s\n",
+	imprule?'T':'F', chain?'T':'F',
+	name, dp->d_name->n_name, suff, newsuff,
+	ip->n_name, ip->n_flag & N_TARGET ? " (TARGET)":"",
+	sp->n_name); */
 				if ((ip->n_flag & N_DOING))
 					continue;
 				if (!ip->n_tim.tv_sec)
@@ -80,6 +121,7 @@ dyndep(struct name *np, struct rule *imprule)
 						imprule->r_cmd = sp->n_rule->r_cmd;
 					}
 					pp = ip;
+DP("Match found: %s -> %s\n", pp->n_name, np->n_name);
 					goto finish;
 				}
 			}
