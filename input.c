@@ -623,7 +623,7 @@ target_type(char *s)
 #endif
 	};
 
-	if (*s != '.')
+	if (*s != '.' && strchr(s, '%') == NULL)
 		return T_NORMAL;
 
 	// Check for one of the known special targets

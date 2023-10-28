@@ -4,14 +4,16 @@
 #include "make.h"
 
 #ifdef DEBUG
-# define DP(fmt, ...) printf("  > " fmt, __VA_ARGS__)
+# define DP(fmt, ...) printf("  > " fmt __VA_OPT__(,) __VA_ARGS__) // 'fmt' must be a "..." literal
+	// __VA_OPT__ is not standard C (it's C++20), but supported
+	// by CLANG and GCC. Just don't -DDEBUG if it's unavailable.
 #else
-# define DP(fmt, ...)
+# define DP(fmt, ...) do {} while (0)
 # ifndef NDEBUG
 #  define NDEBUG
 # endif
 #endif
-#include <assert.h> // Must come after setting NDEBUG
+#include <assert.h> // Must come after settling on NDEBUG or not
 
 /*
  * Return a pointer to the suffix of a name (which may be the
@@ -80,6 +82,7 @@ dyndep(struct name *np, struct rule *imprule)
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
  retry:
 #endif
+
 	for (rp = xp->n_rule; rp; rp = rp->r_next) {
 		for (dp = rp->r_dep; dp; dp = dp->d_next) {
 			// Generate new suffix rule to try
@@ -92,23 +95,21 @@ dyndep(struct name *np, struct rule *imprule)
 				if (!strchr(newsuff, '%')) {
 					ip = namecat(base, newsuff, TRUE);
 				} else {
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
 DP("%s is a pattern rule!\n", newsuff);
-					char* pattern = xstrdup(newsuff);
-					char* placeholder = strchr(pattern, '%');
+					char *pattern = xstrdup(newsuff);
+					char *placeholder = strchr(pattern, '%');
+					const char *prefix, *suffix;
+					prefix = pattern;
 					assert(placeholder);
 					*placeholder = '\0';
-					const char* path = pattern;
-					const char* realsuff = placeholder + 1; // May just be '\0'
-					ip = namecat3(path, base, realsuff, TRUE);
-DP("  [path: %s] [real_suffix: %s] [base: %s] -> %s\n", path, realsuff, base, ip->n_name);
+					suffix = placeholder + 1; // May just be '\0'
+					ip = namecat3(prefix, base, suffix, TRUE);
+DP("  [prefix: %s] [%%: %s] [suffix: %s] -> %s\n", prefix, base, suffix, ip->n_name);
 					free(pattern);
+#endif
 				}
 
-/* DP("[imprule? %c] [chain? %c] [name=%s] [dp:%s] [suff=%s], [newsuff=%s] [imp.prereq:%s%s] inf. rule to try: %s\n",
-	imprule?'T':'F', chain?'T':'F',
-	name, dp->d_name->n_name, suff, newsuff,
-	ip->n_name, ip->n_flag & N_TARGET ? " (TARGET)":"",
-	sp->n_name); */
 				if ((ip->n_flag & N_DOING))
 					continue;
 				if (!ip->n_tim.tv_sec)
@@ -121,7 +122,7 @@ DP("  [path: %s] [real_suffix: %s] [base: %s] -> %s\n", path, realsuff, base, ip
 						imprule->r_cmd = sp->n_rule->r_cmd;
 					}
 					pp = ip;
-DP("Match found: %s -> %s\n", pp->n_name, np->n_name);
+DP("OK: %s -> %s\n", pp->n_name, np->n_name);
 					goto finish;
 				}
 			}
