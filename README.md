@@ -1,13 +1,3 @@
-_The name change of this fork is not a random, arbitrary whim: it reflects
-my different personal focus for the project, which is "the make applet in
-BusyBox-w32", rather than being a POSIX make. In fact, none of the extensions
-(plus a Windows build...) I plan to add are POSIX._
-
-_Also, further down the road, the "visionary goal" is to make this make so
-compelling and practical (e.g. for bootstrapping systems) that BB upstream will
-eventually feel the need to integrate a make utility, and indeed an extended
-version of PDPMAKE (or something that has the features I plan to have here)._
-
 ### Public domain POSIX make
 
 This is an implementation of [POSIX make](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html).
