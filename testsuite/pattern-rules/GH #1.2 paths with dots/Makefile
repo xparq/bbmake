@@ -2,11 +2,9 @@ SRC = src.d
 OUT = out.d
 PROGRAM = test
 
-.SUFFIXES: $(SRC)/%.c
-
 all: linktree_kludge
 
-test: $(OUT)/main.o $(OUT)/sub/sub.o
+$(PROGRAM): $(OUT)/main.o $(OUT)/sub/sub.o
 	$(CC) $^ -o $@
 	@echo All done.
 

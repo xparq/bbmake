@@ -642,6 +642,11 @@ target_type(char *s)
 			*sfx = '\0';
 			if (is_suffix(s))
 				ret = T_INFERENCE;
+			else if (strchr(s, '%')) { // Suffix pattern?
+				// Add to .SUFFIXES, so it can be used for inference
+				addrule(newname(".SUFFIXES"), newdep(newname(s), NULL), NULL, 0);
+				ret = T_INFERENCE;
+			}
 			*sfx = '.';
 		}
 	}

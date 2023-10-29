@@ -2,8 +2,6 @@ PROGRAM = test
 SRC = src
 OUT = out
 
-.SUFFIXES: $(SRC)/%.c
-
 #all: $(PROGRAM)
 all: linktree_kludge # See below...
 

@@ -1,5 +1,3 @@
-.SUFFIXES: .c src/%.c
-
 test: along.o main.o
 	$(CC) $^ -o $@
 	@echo All done.
