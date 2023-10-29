@@ -70,7 +70,6 @@ dyndep(struct name *np, struct rule *imprule)
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
  retry:
 #endif
-
 	for (rp = xp->n_rule; rp; rp = rp->r_next) {
 		for (dp = rp->r_dep; dp; dp = dp->d_next) {
 			// Generate new suffix rule to try
