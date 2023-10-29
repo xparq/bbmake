@@ -1,5 +1,2 @@
 *.o
 make
-testsuite/**/test
-tmp/
-*.tmp
