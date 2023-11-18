@@ -1,0 +1,77 @@
+﻿name: build (Windows/MSVC + SFML)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+#??  vars:
+#      SZ_SFML_LIBROOT: tmp/SFML
+#      _SFML_PACK_NAME: windows-vc17-64.zip
+#      _SFML_DOWNLOAD_PACK: https://artifacts.sfml-dev.org/by-branch/master/${{ env._SFML_PACK_NAME }}
+#      # NOTE: pkg. layout: ./<commit-hash>/[lib|include|...]
+#      _SFML_DOWNLOAD_TO: tmp
+
+env:
+  SZ_SFML_LIBROOT: tmp/SFML
+  #_SFML_PACK_NAME: windows-vc17-64.zip
+
+#!!?? _SFML_DOWNLOAD_PACK: https://artifacts.sfml-dev.org/by-branch/master/${{ _SFML_PACK_NAME }}
+  #_SFML_DOWNLOAD_PACK: https://artifacts.sfml-dev.org/by-branch/master/windows-vc17-64.zip
+  # Should pin to 2.6.x, as soon as it becomes available!
+  # NOTE: pkg. layout: ./<commit-hash>/[lib|include|...]
+  #_SFML_DOWNLOAD_DIR: tmp
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  #BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+    
+    steps:
+
+    - name: Checkout...
+      uses: actions/checkout@v3
+
+#    - name: TEST wget (Not mentioned in the Win. runner toolset!)
+#      run: wget -h
+# WELL: NOT installed! (So much about lots of download actions on the marketplace...)
+
+#    - name: Install prerequisites (wget...)
+#      run: choco install wget
+
+    - name: Setup SFML...
+      shell: cmd
+      run: tooling/sfml_dl+unzip.cmd
+
+    #  From sources (on GitHub):
+    #- uses: actions/checkout@master
+    #  with:
+    #    repository: SFML/SFML
+    #    path: tmp
+    #    ref: refs/heads/master
+    #    #??commit: a4bca20567d744c04929b1fc7135cdb845c7c4f6
+    #    # -> https://github.com/actions/checkout/issues/24
+
+    - name: Setup MSVC/CLI dev. env.
+      uses: ilammy/msvc-dev-cmd@v1.12.0
+
+    - name: Build with NMAKE + Jumpstart-NG
+      #working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: cmd
+      run: nbuild.cmd
+
+    - name: Build with BusyBox-w32 (pdpmake) + my univ. makefile
+      #working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: cmd
+      run: bbuild.cmd
